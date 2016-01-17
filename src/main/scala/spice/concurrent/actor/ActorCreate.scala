@@ -57,3 +57,10 @@ object ActorLifecycle extends App {
   Thread.sleep(1000)
   ourSystem.terminate()
 }
+
+object ActorPingAndPong extends App {
+  val master = ourSystem.actorOf(Props[Master], "master")
+  master ! "start"
+  Thread.sleep(2000)
+  ourSystem.terminate()
+}
