@@ -25,8 +25,8 @@ class Reflection {
   /**
     * Instantiating a Type at Runtime
     */
+  case class Person(name: String)
   def instante = {
-    case class Person(name: String)
     val m = ru.runtimeMirror(getClass.getClassLoader)
     val classPerson = ru.typeOf[Person].typeSymbol.asClass
     val cm = m.reflectClass(classPerson)
@@ -37,8 +37,8 @@ class Reflection {
   /**
     * Accessing and Invoking Members of Runtime Types
     */
+  case class Purchase(name: String, orderNumber: Int, var shipped: Boolean)
   def access = {
-    case class Purchase(name: String, orderNumber: Int, var shipped: Boolean)
     val p = Purchase("Jeff Lebowski", 23819, false)
     val m = ru.runtimeMirror(p.getClass.getClassLoader)
     val shippingTermSymb = ru.typeOf[Purchase].decl(ru.TermName("shipped")).asTerm
@@ -52,22 +52,21 @@ class Reflection {
   /**
     * Runtime Classes in Java vs. Runtime Types in Scala
     */
+  class E {
+    type T
+    val x: Option[T] = None
+  }
+
+  class C extends E
+  class D extends C
+
   def javaVSScala = {
-    class E {
-      type T
-      val x: Option[T] = None
-    }
-
-    class C extends E
-    class D extends C
-
     val c = new C {
       type T = String
     }
     val d = new D {
       type T = String
     }
-
     //using Java reflection on Scala classes might return surprising or incorrect results.
     c.getClass.isAssignableFrom(d.getClass)
 
