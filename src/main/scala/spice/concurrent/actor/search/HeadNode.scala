@@ -6,6 +6,7 @@ import akka.util.Timeout
 import akka.actor.{Props, ActorRef, Actor}
 import akka.pattern._
 import spice.concurrent.actor.Logger
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable.HashMap
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -19,7 +20,7 @@ case class ScoredDocument(score: Double, document: String)
   *
   * @param index
   */
-class SearchNode(index: HashMap[String, Seq[ScoredDocument]]) extends Actor with Logger {
+class SearchNode(index: Map[String, Seq[ScoredDocument]]) extends Actor with Logger {
   override def receive = {
     case SearchQuery(query, maxResults) =>
       log.info(s"index - $index")
@@ -28,7 +29,7 @@ class SearchNode(index: HashMap[String, Seq[ScoredDocument]]) extends Actor with
 }
 
 object SearchNode {
-  def props(scoredDoc: HashMap[String, Seq[ScoredDocument]]) = Props(classOf[SearchNode], scoredDoc)
+  def props(scoredDoc: Map[String, Seq[ScoredDocument]]) = Props(classOf[SearchNode], scoredDoc)
 }
 /**
   *
@@ -39,7 +40,8 @@ class HeadNode extends Actor with Logger {
 
   val nodes: Seq[ActorRef] =
     for(i<- 1 to 3) yield {
-      context.actorOf(SearchNode.props(HashMap(i.toString -> Seq(ScoredDocument(i, s"doc-$i")))))
+      context.actorOf(SearchNode.props(TreeMap(i.toString -> Seq(ScoredDocument(i, s"doc-$i"),ScoredDocument(i+1, s"doc-${i+1}")),
+        (i+1).toString -> Seq(ScoredDocument(i+1, s"doc-${i*10+1}"),ScoredDocument(i+2, s"doc-${i*10+2}")))))
     }
   override def receive = {
     case s @ SearchQuery(query, maxResults) =>
