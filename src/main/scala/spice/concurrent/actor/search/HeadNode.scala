@@ -51,13 +51,13 @@ class HeadNode extends Actor with Logger {
       //It's bad to use Await, but where should I Await?
       //1. give Future to non Actor system
       //2. use a AwaitActor for any Future
-      val futureResults = nodes.map(n => n ? s).map{Await.result(_,Duration.apply(10,TimeUnit.SECONDS))}
+      val futureResults = nodes.map(n => n ? s)
       def combineResults(current: Seq[ScoredDocument],
                          next: Seq[ScoredDocument]) =
         (current ++ next).view.sortBy(_.score).take(maxResults).force
       val rst = futureResults.foldLeft(Seq[ScoredDocument]()) {
         (current, next) =>
-          combineResults(current, next.asInstanceOf[Seq[ScoredDocument]])
+          combineResults(current, Await.result(next, Duration(10,TimeUnit.SECONDS)).asInstanceOf[Seq[ScoredDocument]])
       }
       rst.foreach{r => log.info(r.toString)}
   }
