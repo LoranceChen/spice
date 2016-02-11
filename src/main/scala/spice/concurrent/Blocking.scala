@@ -14,7 +14,7 @@ import scala.concurrent.{Await, Future, blocking}
   *
   * Question:
   * 1. What's the block operation definition?
-  * 2. Why `sleep(1000)` can block other thread, does other thread can't dispatched by CPU automatically?
+  * 2. Why `sleep(1000)` can block other thread, does other thread can't dispatched by CPU automatically and huge on those blocked thread?
   */
 object Blocking extends App{
   def blockingOperate(needBlock: Boolean) = {
