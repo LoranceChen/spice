@@ -31,7 +31,7 @@ object Blocking extends App{
       }
       println("curCount - " + curCount + " - awake")
       if (curCount <= maxCount) blockWithBlock(needBlocking, curCount + 1, maxCount, f :: fs)
-      else fs
+      else f :: fs
     }
     val fs = blockWithBlock(needBlock, 1, 20, Nil)
     for (f <- fs) Await.ready(f, Duration.Inf)
