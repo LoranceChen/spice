@@ -1,6 +1,4 @@
-package spice.macros
-
-import spice.macros._
+package spice.language.mymacro
 /**
   *
   */
