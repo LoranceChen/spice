@@ -10,10 +10,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Future;
 
 /**
- * TODO
- * 1. reuse ByteBuffer.allocate(2048); operation
- * 2. able to read and write double operation
- * 3. decode
+ * TODO reuse ByteBuffer.allocate(2048); operation
  */
 public class ClientMain {
     public static void main(String[] args) throws Exception {
