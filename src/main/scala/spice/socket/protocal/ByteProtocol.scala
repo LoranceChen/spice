@@ -6,16 +6,16 @@ import scala.collection.mutable
 
 /**
   * data saved place
-  * 1. save network data to queue, network as bytes
-  * 2. deserialize data, support :
-  *      Network Type    Volume        Scala Type   NO
-  *   1) boolean         1-bit          Boolean     001
-  *   2) string          utf-8          String      010 with length: Long
-  *   3) Short           16-bit         Short       011
-  *   4) Int             32-bit         Int         100
-  *   5) Long            64-bit         Long        101
-  *   6) float           32-bit         Float       110
-  *   7) double          64-bit         Double      111
+  * 1. exchange data between Byte and below type
+  * 2. deserialize data, support : (socket meta data is byte)
+  *      Network Type    Volume        Scala Type   NO(值 - 空间大小 )
+  *   1) boolean         1-byte         Boolean     1 - 1byte
+  *   2) string          utf-8          String      2 with length: Long - 1byte+8byte(最大可表示2^64个utf-8字符长度)
+  *   3) Short           2-byte         Short       3 - 1byte
+  *   4) Int             4-byte         Int         4 - ...
+  *   5) Long            8-byte         Long        5 - ...
+  *   6) float           4-byte         Float       6 - ...
+  *   7) double          8-byte         Double      7 - ...
   *   PS: NO. represent how many bytes should I read form network byte[], such as 001 map 1 byte should be read to boolean.
   *   Note: Version 1.0 will support 1) 2) 3) 4) 5),its easy to deal with
   *   to 6) and 7) may be I should read IEEE to do exchange byte[] to float/double
@@ -26,8 +26,10 @@ import scala.collection.mutable
   *
   *   At version 1.0 it won't support concurrnt for simplify.
   *   !!! Don't operate this instance in multi thread.
+  *
+  * 4. besides,
   */
-class BitProtocal(val netData: ByteBuffer) {
+class ByteProtocol(val netData: ByteBuffer) {
 //  object NO extends Enumeration {
 //    val Bool = Value(1, "boolean")
 //    val String = Value(2, "string")
@@ -58,6 +60,7 @@ class BitProtocal(val netData: ByteBuffer) {
   private var queue = new mutable.Queue[Byte]()
   def read[T] = {
 //    val queue.dequeue
+    netData.getFloat()
   }
 
 }

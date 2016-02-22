@@ -3,8 +3,6 @@ package spice.socket
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousServerSocketChannel
 
-import spice.javasocket.javaclient.ClientMain
-
 /**
   * 1.start a socket to listen
   * 2.accept client byte[], and print it

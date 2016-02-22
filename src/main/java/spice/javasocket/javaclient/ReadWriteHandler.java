@@ -1,5 +1,7 @@
 package spice.javasocket.javaclient;
 
+import spice.javasocket.SocketHelper;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.channels.CompletionHandler;
@@ -18,12 +20,12 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
             byte bytes[] = new byte[limits];
             attach.buffer.get(bytes, 0, limits);
             String msg = new String(bytes, cs);
-            System.out.format("Server Responded: "+ msg);
-            try {
-                msg = this.getTextFromUser();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            SocketHelper.log("Server Responded: "+ msg);
+//            try {
+//                msg = this.getTextFromUser();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
             if (msg.equalsIgnoreCase("bye")) {
                 attach.mainThread.interrupt();
                 return;
@@ -34,7 +36,8 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
             attach.buffer.flip();
             attach.isRead = false; // It is a write
             attach.channel.write(attach.buffer, attach, this);
-        }else {
+        } else {
+            SocketHelper.log("attach.isRead = false");
             attach.isRead = true;
             attach.buffer.clear();
             attach.channel.read(attach.buffer, attach, this);
@@ -50,5 +53,17 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
                 new InputStreamReader(System.in));
         String msg = consoleReader.readLine();
         return msg;
+    }
+}
+
+class MyReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+    @Override
+    public void completed(Integer result, Attachment attach) {
+        SocketHelper.log("MyReadWriteHandler - completed");
+    }
+
+    @Override
+    public void failed(Throwable e, Attachment attach) {
+        e.printStackTrace();
     }
 }

@@ -1,20 +1,35 @@
 package spice.javasocket;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 
 /**
- *
+ * used when socket read
  */
 class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+    /**
+     * callback by AsynchronousSocketChannel.read(newAttach.buffer, newAttach, rwHandler);
+     * @param result normal read value is 5 , what's -1 means?
+     * @param attach same as newAttach
+     */
     @Override
     public void completed(Integer result, Attachment attach) {
+        try {
+            SocketHelper.log("ReadWriteHandler - classpath - " + getClass().getName());
+            SocketHelper.log("ReadWriteHandler - `result`:Integer - " + result);
+            SocketHelper.log("ReadWriteHandler - `attach`:Attachment -");
+            attach.printString("ReadWriteHandler");
+        } catch(Throwable t) {
+            t.printStackTrace();
+        }
+
+        //what's -1 means?
         if (result == -1) {
             try {
                 attach.client.close();
-                System.out.format("Stopped   listening to the   client %s%n",
-                        attach.clientAddr);
+                SocketHelper.log("Stopped listening to the client - " + attach.clientAddr);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -28,11 +43,9 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
             attach.buffer.get(bytes, 0, limits);
             Charset cs = Charset.forName("UTF-8");
             String msg = new String(bytes, cs);
-            System.out.format("Client at  %s  says: %s%n", attach.clientAddr,
-                    msg);
-            attach.isRead = false; // It is a write
+            SocketHelper.log("ReadWriteHandler - Client says: " + msg);
+            attach.isRead = false;
             attach.buffer.rewind();
-
         } else {
             // Write to the client
             attach.client.write(attach.buffer, attach, this);
@@ -40,6 +53,21 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
             attach.buffer.clear();
             attach.client.read(attach.buffer, attach, this);
         }
+
+        SocketHelper.log(this.getClass().getCanonicalName() + "ReadWriteHandler - attach.client.read");
+
+        //ready read again
+        ReadWriteHandler rwHandler = new ReadWriteHandler();
+
+        Attachment newAttach = new Attachment();
+        newAttach.server = attach.server;
+        newAttach.client = attach.client;
+        newAttach.buffer = ByteBuffer.allocate(2048);
+        newAttach.isRead = true;
+        newAttach.clientAddr = attach.clientAddr;
+
+//        attach.client.read(attach.buffer, attach, this);
+        attach.client.read(newAttach.buffer, newAttach, rwHandler);
     }
 
     @Override

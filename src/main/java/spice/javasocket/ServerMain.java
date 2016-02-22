@@ -19,8 +19,11 @@ public class ServerMain {
         Attachment attach = new Attachment();
         attach.server = server;
 
+        attach.printString("ServerMain");
         //accept method returns immediately.
+        SocketHelper.log("server:AsynchronousServerSocketChannel - hashcode - " + server.hashCode());
         server.accept(attach, new ConnectionHandler());
+
         Thread.currentThread().join();
     }
 
