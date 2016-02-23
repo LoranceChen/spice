@@ -10,7 +10,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Future;
 
 /**
- * TODO reuse ByteBuffer.allocate(2048); operation
+ * TODO reuse ByteBuffer.allocate(2048); space rather then allocate on every input.
  */
 public class ClientMain {
     public static void main(String[] args) throws Exception {
