@@ -9,5 +9,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-remote" % "2.4.1",
   "org.scala-lang" % "scala-actors" % "2.11.7",
 
-  "org.scala-lang" % "scala-reflect" % "2.11.7"
+  "org.scala-lang" % "scala-reflect" % "2.11.7",
+
+  "net.liftweb" %% "lift-json" % "3.0-M8"
 )
