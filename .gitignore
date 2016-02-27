@@ -8,3 +8,4 @@ target/
 
 #TEMP FILE
 *.log
+*.test
