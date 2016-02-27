@@ -82,10 +82,8 @@ object test extends App with File {
     bb.get(des, position, limit)
     sb.append(new String(des, StandardCharsets.UTF_8))
   }
-//  println(Charset.defaultCharset())
   val sb = channelRead("./src/main/scala/spice/io/test",storeBB, new StringBuilder())
 
-//  val s = "In terms of socket,it's important of these three workflow.\n1. wait/going connection - connected\n2. write data to endpoint\n3. read data from endpoint\n\nSurrounding those workflow, we able to build a fledged communication\nwe should care about:\n1. encode/decode data which from application or transfer to application\n2. message queue - socket communicate operation is single thread but application is multi-thread, so its important to define a\nqueue to let socket deal with data step by step.\n3. streams - after these operation clicked(触发),we need a RX programming style(may be others) make logic lighter.\n4. manage all of sockets, contains close/search/send or write data with specify socket(s).\n\nexception deal\n1. where handle exception?\n2. how to custom exception\nConnectTimeoutException\nTimeoutException\n\nhttp://ifeve.com/buffers/ 关于ByteBuffer的入门介绍(仅供参考)\nmark()与reset()方法\n::通过调用Buffer.mark()方法，可以标记Buffer中的一个特定position。之后可以通过调用Buffer.reset()方法恢复到这个position。"
   println(sb.toString())
   //why it also have Garbled when reading and writing set as UTF-8? see NOTE at top comment
   channelWrite(sb.toString(), "./src/main/scala/spice/io/test_write.test")
