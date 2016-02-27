@@ -1,8 +1,8 @@
-package spice.socket
+package spice.socket.other
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.nio.ByteBuffer
-import java.nio.channels.{SocketChannel, SelectionKey, ServerSocketChannel, Selector}
+import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 
 /**
   *

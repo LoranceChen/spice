@@ -1,10 +1,10 @@
-package spice.socket
+package spice.socket.other
 
 import java.io.{BufferedReader, InputStreamReader}
-import java.net.{InetSocketAddress, InetAddress}
+import java.net.{InetAddress, InetSocketAddress}
 import java.nio.ByteBuffer
-import java.nio.channels.{Selector, SocketChannel, SelectionKey}
-import java.nio.charset.{CharsetDecoder, Charset}
+import java.nio.channels.{SelectionKey, Selector, SocketChannel}
+import java.nio.charset.Charset
 
 import scala.annotation.tailrec
 

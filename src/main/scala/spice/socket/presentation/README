@@ -1,4 +1,4 @@
 # This package
-1. data serialize and deserialize
+1. data encode and decode
 2. reactive driver after serialize/deserialize operation
 3. custom data structure composed by ``

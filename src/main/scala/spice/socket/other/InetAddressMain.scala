@@ -1,6 +1,6 @@
-package spice.socket
+package spice.socket.other
 
-import java.net.{UnknownHostException, InetAddress}
+import java.net.{InetAddress, UnknownHostException}
 
 /**
   *Internet protocol uses the IP addresses to deliver packets.

@@ -8,7 +8,7 @@ import scala.collection.mutable
 /**
   *
   */
-package object protocal {
+package object protocol {
 
   /**
     * 1.dequeue elems
