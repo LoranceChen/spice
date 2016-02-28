@@ -11,7 +11,7 @@ We can use Observable.subscribe(Observer) do one things, I think it will be easy
 Future used at - we do a operation and the result will back. Besides, we able to handle the will-result continue our works.
 Such as Async and any other task long-time-cost operation.
 Future for Async will make call-back warped in Promise and make call-back more straight then use a call-back function barely.
-Future for other long-time-cost task able to put them to another thread and continue work at current thread.
+More popularly saying, Future do long-time-cost task using put them to another thread and continue work with them at current thread.
 
 As for Rx, above we have see, it master at a out system events stream.
 But Rx also can transfer Future to Rx style that will be meaningful if we will do a series of not decide things according the future result.
