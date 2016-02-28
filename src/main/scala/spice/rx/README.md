@@ -1,5 +1,5 @@
-##Rx Style
-###When to use Rx?
+## Rx Style Guide
+### When to use Rx?
 1. If out of our program will get a series of event from our environment and we will operate these event for different purpose.
 Such as click-event from mouse and we deal special combines by click spare time and count(eg. third-right-click aim to X skill :),
 or keyboard-event also useful and expressive with Rx Style.
@@ -7,7 +7,7 @@ or keyboard-event also useful and expressive with Rx Style.
 At this condition, we could call the "according operation" to a Observable/Theme and call "some things" as Observer.
 We can use Observable.subscribe(Observer) do one things, I think it will be easy understand if could write Observer.subscribe(Observable)
 
-###Difference with Future?
+### Difference with Future?
 Future used at - we do a operation and the result will back. Besides, we able to handle the will-result continue our works.
 Such as Async and any other task long-time-cost operation.
 Future for Async will make call-back warped in Promise and make call-back more straight then use a call-back function barely.
@@ -16,6 +16,7 @@ Future for other long-time-cost task able to put them to another thread and cont
 As for Rx, above we have see, it master at a out system events stream.
 But Rx also can transfer Future to Rx style that will be meaningful if we will do a series of not decide things according the future result.
 
+### Detail use case
 #### Adapt call-back
 Put call-back method body to `onNext` body.
 
