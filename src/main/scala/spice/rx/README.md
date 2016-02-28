@@ -1,6 +1,6 @@
 ##Rx Style
 ###When to use Rx?
-1. If out of our program will get a series of event and we will operate these event for different puporse.
+1. If out of our program will get a series of event from our environment and we will operate these event for different purpose.
 Such as click-event from mouse and we deal special combines by click spare time and count(eg. third-right-click aim to X skill :),
 or keyboard-event also useful and expressive with Rx Style.
 2. If we want do some things, not decide yet, according to a operation result.Its also useful by Rx.
