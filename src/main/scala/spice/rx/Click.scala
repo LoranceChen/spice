@@ -1,4 +1,4 @@
-package spice.concurrent.rx
+package spice.rx
 
 import scala.swing._
 import scala.swing.event._

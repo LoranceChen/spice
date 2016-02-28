@@ -1,4 +1,4 @@
-package spice.concurrent.rx
+package spice.rx
 
 import rx.lang.scala._
 import spice.concurrent._
