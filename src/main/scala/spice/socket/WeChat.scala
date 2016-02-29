@@ -3,10 +3,12 @@ package spice.socket
 import spice.socket.session.Entrance
 
 /**
-  *
+  * We chat too
   */
 object WeChatToo extends App {
-  Entrance.start("localhost", 10001)
+  Entrance("localhost", 10001)
+
+
 
   Thread.currentThread.join
 }

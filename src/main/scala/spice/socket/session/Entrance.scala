@@ -2,52 +2,37 @@ package spice.socket.session
 
 import java.net.InetSocketAddress
 import java.nio.channels.{AsynchronousSocketChannel, CompletionHandler, AsynchronousServerSocketChannel}
-import rx.lang
 import rx.lang.scala.{Subscriber, Observable}
-import spice.socket.handle.ConnectionHandler
-
-import scala.annotation.tailrec
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
 /**
-  * 1.start a socket to listen
-  * 2.accept client byte[], and print it
-  * 3.send input data to client and print it
-  * 4.close socket
+  * begin server socket listen
   */
-object Entrance {
-//  var on = false
-  def start(host: String, port: Int) = {
+class Entrance(host: String, port: Int) {
+  /**
+    * listen connection and emit every connection event.
+    */
+  def start = {
     val server: AsynchronousServerSocketChannel = AsynchronousServerSocketChannel.open
     val sAddr: InetSocketAddress = new InetSocketAddress(host, port)
     server.bind(sAddr)
     println(s"Server is listening at - $sAddr")
-//    val attach: Attachment = Attachment(server, null, null, true)
-  //test
-//  val callback = new ConnectionHandler()//as CompletionHandler
-//
-//  server.accept(server, callback)
-    //need a stream to get all connection
-//    server.accept(server, new ConnectionHandler())
-    val o = socketObservable(server)
-//    o.subscribe(s => s.accept(s, new ConnectionHandler))
 
-    o.subscribe(s => println("a ha,a client come here, what should I do ... "))
-//    o.subscribe(s => println("a ha,2a client come here, what should I do ... "))
-//    o.subscribe(s => println("a ha,3a client come here, what should I do ... "))
-    o.doOnCompleted(println("all connect completed"))
-//    o.doOnNext{ a =>
-//      println(a.isRead)
-//    }
-
+    socketObservable(server)
   }
+
+  /**
+    *
+    */
+//  def send()
 
   //connection observable - when connection occurred emit it.
   //this action as ObservablesHot
   //actually is a cold Obs(great then hot)
-  def socketObservable(server: AsynchronousServerSocketChannel): Observable[AsynchronousSocketChannel] = {
+  //hot - if accept a connection new a Observable
+  private def socketObservable(server: AsynchronousServerSocketChannel): Observable[AsynchronousSocketChannel] = {
 
     val f = connection(server)
 
@@ -71,11 +56,8 @@ object Entrance {
     }
   }
 
-  // when completed continue accept next one
-  // a way
-  //connection forever
-  def connection(server: AsynchronousServerSocketChannel) = {
-    //bridge of future connection
+  //make call back to future
+  private def connection(server: AsynchronousServerSocketChannel) = {
     val p = Promise[AsynchronousSocketChannel]
     val callback = new CompletionHandler[AsynchronousSocketChannel, AsynchronousServerSocketChannel] {
       override def completed(result: AsynchronousSocketChannel, attachment: AsynchronousServerSocketChannel): Unit = {
@@ -93,5 +75,8 @@ object Entrance {
     server.accept(server, callback)
     p.future
   }
+}
 
+object Entrance {
+  def apply(host: String, port: Int) = new Entrance(host, port)
 }
