@@ -5,13 +5,12 @@ import java.nio.ByteBuffer
 import java.nio.channels.{CompletionHandler, AsynchronousSocketChannel}
 
 import spice.javasocket.SocketHelper
+import spice.socket.protocal.BasicProtocol
 
 /**
   *
   */
 object ClientMain extends App {
-  import spice.javasocket.javaclient.{ClientMain => JavaClient}
-//  JavaClient.main(null)
   val channel: AsynchronousSocketChannel = AsynchronousSocketChannel.open
   val serverAddr: SocketAddress = new InetSocketAddress("localhost", 10001)
   def getCompletionHandler = new CompletionHandler[Void, Int] {
@@ -47,3 +46,14 @@ class Attachment(
   var buffer: ByteBuffer,
   var mainThread: Thread,
   var isRead: Boolean = false)
+
+object Transfer {
+  def write(context: BasicProtocol) = {
+
+//    write(con)
+  }
+}
+
+object WeChatTooTaskClient {
+//  val channel: AsynchronousSocketChannel =
+}

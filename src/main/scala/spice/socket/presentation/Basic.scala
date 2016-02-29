@@ -5,17 +5,17 @@ import java.nio.ByteBuffer
 /**
   * interface of network bytes exchange with T protocol
   */
-trait BasicProtocol[T] {
-  def enCode: Unit
-  def deCode(bf: ByteBuffer): T
+trait BasicProtocol {
+  def enCode(dst: ByteBuffer): Unit
+  def deCode(src: ByteBuffer): BasicProtocol
 }
 
 /*
  * example: define Login Protocol
  */
-final class Login(account: String, password: String) extends BasicProtocol[Login]{
+final class Login(account: String, password: String) extends BasicProtocol{
 
-  def enCode: Unit = {
+  def enCode(dst: ByteBuffer) = {
     //make password to bytes with String protocol
   }
 
