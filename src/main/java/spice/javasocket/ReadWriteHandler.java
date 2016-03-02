@@ -46,7 +46,30 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
             SocketHelper.log("ReadWriteHandler - Client says: " + msg);
             attach.isRead = false;
             attach.buffer.rewind();
+
+//            //send back
+//            ReadWriteHandler rwHandler2 = new ReadWriteHandler();
+//            Attachment newAttach2 = new Attachment();
+//            newAttach2.server = attach.server;
+//            newAttach2.client = attach.client;
+//            newAttach2.buffer = catchCodingExp("back to you - " + msg);
+//            newAttach2.isRead = true;
+//            newAttach2.clientAddr = attach.clientAddr;
+//
+//            attach.client.write(newAttach2.buffer, newAttach2, rwHandler2);
+
         } else {
+            //send back
+            ReadWriteHandler rwHandler2 = new ReadWriteHandler();
+            Attachment newAttach2 = new Attachment();
+            newAttach2.server = attach.server;
+            newAttach2.client = attach.client;
+            newAttach2.buffer = catchCodingExp("back to you - " + "msg");
+            newAttach2.isRead = true;
+            newAttach2.clientAddr = attach.clientAddr;
+
+            attach.client.write(newAttach2.buffer, newAttach2, rwHandler2);
+
             // Write to the client
             attach.client.write(attach.buffer, attach, this);
             attach.isRead = true;
@@ -66,13 +89,22 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
         newAttach.isRead = true;
         newAttach.clientAddr = attach.clientAddr;
 
-//        attach.client.read(attach.buffer, attach, this);
         attach.client.read(newAttach.buffer, newAttach, rwHandler);
     }
 
     @Override
     public void failed(Throwable e, Attachment attach) {
         e.printStackTrace();
+    }
+
+    private ByteBuffer catchCodingExp(String msg) {
+        ByteBuffer bf = null;
+        try {
+            bf = ByteBuffer.wrap(msg.getBytes("UTF-8")); //ByteBuffer.allocate(2048);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return bf;
     }
 }
 

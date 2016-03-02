@@ -18,7 +18,7 @@ class Entrance(host: String, port: Int) {
   /**
     * listen connection and emit every connection event.
     */
-  def start = {
+  def startListen = {
     val server: AsynchronousServerSocketChannel = AsynchronousServerSocketChannel.open
     val sAddr: InetSocketAddress = new InetSocketAddress(host, port)
     server.bind(sAddr)
@@ -26,6 +26,91 @@ class Entrance(host: String, port: Int) {
 
     socketObservable(server)
   }
+
+  def startReading(socketChannel: AsynchronousSocketChannel): Observable[ReadAttach] = {
+    val readAttach = new ReadAttach(
+      ByteBuffer.allocate(1024),
+      new ReadLeftProto(None, None, 0, 0),
+      socketChannel
+    )
+
+    /**
+      * @param rawAttach should be raw form callback
+      * TODO make the buffer as directAllocation because the operation is simple
+      */
+    def dispatchBuffer(rawAttach: ReadAttach) = {
+      val buffer = rawAttach.byteBuffer
+      val leftProto = rawAttach.readLeftProto
+//      buffer.flip()//position = 0, limit = length of the bytes
+      //last proto does completed
+      val lastCompleted = leftProto match {
+        case ReadLeftProto(None, _, _, _) =>
+          //not left
+          buffer.flip()
+          val limit = buffer.limit()
+          limit match {
+            case x if x < 8 =>
+              leftProto.protoId = Some(buffer.getLong)
+            case x if 8 <= x && x < 16 =>
+              leftProto.protoId = Some(buffer.getLong)
+              leftProto.length = Some(buffer.getLong)
+            case x if 16 <= x =>
+//              leftProto.protoId = Some(buffer.getLong)
+              val length = buffer.getLong
+//              leftProto.length = Some(length)
+              //缓冲区一次不够放
+              if (length > buffer.capacity() - 16) {//tag:1
+                //使用临时空间处理.
+                //1. 为该次通信协议使用一个恰好的Array[Byte](length)//队列更好一些,因为只是存数据和读数据的操作
+                //2. 为该socket的通信协议分配一个队列
+                //3. 为所有链接的socket分配一个Map[socketChannel -> Queue[Byte]]统一存储和回收
+                //TODO
+              }
+              else //缓存区够放
+                if (limit - buffer.position >= length){//需要的数据已经完全在缓冲区内了.
+                  // p:16(当前索引为16,含有效数据),limit = eg.20(索引20不含有效数据), length = 4,这时候是刚好够得
+                  //触发该协议
+
+              } else {//需要的数据未完全到达
+                //标记并进行下次读写
+              }
+
+          }
+//          if (limit < 8)
+//          else
+//          leftProto.protoId = if (limit >= 8) Some(buffer.getLong) else None
+//          leftProto.
+        case ReadLeftProto(Some(id), None, _, _) =>
+          //only read uuid
+        case ReadLeftProto(Some(id), Some(length), _, _) =>
+          //last time deal with a length but not read all of the load.
+          //TODO need a ArrayBuffer save long data.Its also useful to define a custom buffer transfer big data.
+          //as cost, we must manage the data, make it will be collection back
+
+      }
+    }
+
+    /**
+      * used when success read uuid and length but just part of protocol overload
+      */
+    def tempSpace = {
+
+    }
+    Observable.apply[ReadAttach]({ s =>
+      def readForever: Unit = read(socketChannel, readAttach) onComplete {
+        case Failure(f) =>
+          println(s"read exception - $f")
+          s.onError(f)
+        case Success(c) =>
+          s.onNext(c)
+          readForever
+      }
+      readForever
+    }).doOnCompleted {
+      println("read socket - doOnCompleted")
+    }
+  }
+
 
   /**
     * read method will occurred a EnCoding Protocol if get at least one Protocol
@@ -43,13 +128,9 @@ class Entrance(host: String, port: Int) {
     *   FUTUREMORE, it should be able to custom a socket communicate ways
     * NOTE one socket read or write should be single stream, next read/write should be
     */
-  def read(byteBuffer: ByteBuffer, socketChannel: AsynchronousSocketChannel, readAttach: ReadAttach): Observable[Long] = {
-
-
-    val readSubs = Subscriber
-//    val p = Promise[EnCoding]
-    val p = Promise[Long]
-    socketChannel.read(byteBuffer, readAttach, new CompletionHandler[Integer, ReadAttach] {
+  private def read(socketChannel: AsynchronousSocketChannel, readAttach: ReadAttach): Future[ReadAttach] = {
+    val p = Promise[ReadAttach]
+    val callback = new CompletionHandler[Integer, ReadAttach] {
       override def completed(result: Integer, readAttach: ReadAttach): Unit = {
         if (result != -1) {
           /**
@@ -60,23 +141,24 @@ class Entrance(host: String, port: Int) {
             *                                             1024^ capacity
             *    as that example, 0 ~ 15 is last uncompleted protocl, by the way, 0 ~ 8 byte is the protocol's uuid
             */
-          val buffer = readAttach.byteBuffer
-          val readLeftProto = readAttach.readLeftProto
+          //          val buffer = readAttach.byteBuffer
+          //          val readLeftProto = readAttach.readLeftProto
 
           //does uuid contains in the proto buffer, use absolute way not affect position
-          val uuidOpt = if (buffer.position() >= 8) Some(buffer.getLong) else None
-//          readLeftProto.uuid = uuidOpt//save if it was not a completed protocol, saved it for next judgement
+          //          val uuidOpt = if (buffer.position() >= 8) Some(buffer.getLong) else None
+          //          readLeftProto.uuid = uuidOpt//save if it was not a completed protocol, saved it for next judgement
 
-          uuidOpt match {
-            case Some(protocol) =>
-              // according the protocol uuid decide does the buffer contains the protocol completely. If does, read the complete
-//              SearchProto.byUUID(protocol).map { classInfo =>
-//                classInfo.getClassLoader.
-//              }
-              p.trySuccess(protocol)
-            case None =>
-              p.tryFailure(new UUIDNotEnoughException())
-          }
+          //          uuidOpt match {
+          //            case Some(protocol) =>
+          //              // according the protocol uuid decide does the buffer contains the protocol completely. If does, read the complete
+          ////              SearchProto.byUUID(protocol).map { classInfo =>
+          ////                classInfo.getClassLoader.
+          ////              }
+          //              p.trySuccess(protocol)
+          //            case None =>
+          //              p.tryFailure(new UUIDNotEnoughException())
+          //          }
+          p.trySuccess(readAttach)
         } else {
           p.tryFailure(new ResultNegativeException())
         }
@@ -86,18 +168,10 @@ class Entrance(host: String, port: Int) {
         println("read I/O operations fails")
         p.tryFailure(exc)
       }
-    })
+    }
 
-    Observable.apply[Long]({ s =>
-      p.future.recover {
-        case e: UUIDNotEnoughException => e.uuid
-      }.onComplete {
-        case Failure(e) =>
-          s.onError(e)
-        case Success(c) =>
-          s.onNext(c)
-      }
-    })
+    socketChannel.read(readAttach.byteBuffer, readAttach, callback)
+    p.future
   }
 
   //connection observable - when connection occurred emit it.
@@ -107,9 +181,9 @@ class Entrance(host: String, port: Int) {
   private def socketObservable(server: AsynchronousServerSocketChannel): Observable[AsynchronousSocketChannel] = {
 
     val f = connection(server)
-
+//    Observable.create()
     //todo what's the difference between apply and create?
-    Observable.apply[AsynchronousSocketChannel]( { s =>
+    Observable.apply[AsynchronousSocketChannel]({ s =>
 
       //Q: its not a tailrec 1.How to transform to a tailrec 2. does its a matter if NOT transform to a tailrec?
       //A: It's not a recursion actually because future will return immediately. Next call `connectForever` occurred next onComplete, yeah, it's
@@ -125,8 +199,7 @@ class Entrance(host: String, port: Int) {
         }
       }
       connectForever(f)
-      Subscriber()
-    }).doOnCompleted{
+    }).doOnCompleted {
       println("socket connection - doOnCompleted")
     }
   }
@@ -139,7 +212,6 @@ class Entrance(host: String, port: Int) {
         println("connect - success")
         p.trySuccess(result)
       }
-
       override def failed(exc: Throwable, attachment: AsynchronousServerSocketChannel): Unit = {
         println("connect - failed")
         p.tryFailure(exc)

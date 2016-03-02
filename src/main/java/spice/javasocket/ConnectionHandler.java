@@ -2,16 +2,14 @@ package spice.javasocket;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
 /**
  *
  */
-class ConnectionHandler implements
+public class ConnectionHandler implements
         CompletionHandler<AsynchronousSocketChannel, Attachment> {
 
     /**
@@ -35,6 +33,7 @@ class ConnectionHandler implements
         }
         try {
             SocketAddress clientAddr = client.getRemoteAddress();
+            //ready accept next one
             attach.server.accept(attach, this);
             ReadWriteHandler rwHandler = new ReadWriteHandler();
             Attachment newAttach = new Attachment();

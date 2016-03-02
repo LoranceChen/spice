@@ -8,12 +8,12 @@ import java.nio.channels.AsynchronousSocketChannel;
 /**
  *
  */
-class Attachment {
-    AsynchronousServerSocketChannel server;
+public class Attachment {
+    public AsynchronousServerSocketChannel server;
     AsynchronousSocketChannel client;
     ByteBuffer buffer;
     SocketAddress clientAddr;
-    boolean isRead;//what's means?
+    boolean isRead;
 
     public void printString(String position) {
         try {

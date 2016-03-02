@@ -43,8 +43,7 @@ object BufferState extends Enumeration{
   * @param asynchronousSocketChannel
   */
 class ReadAttach( val byteBuffer: ByteBuffer, val readLeftProto: ReadLeftProto, val asynchronousSocketChannel: AsynchronousSocketChannel )
-class ReadLeftProto(var uuid: Option[Long], var lastTo: Int, var lastNeed: Int)
-
+case class ReadLeftProto(var protoId: Option[Long], var length: Option[Long], var lastTo: Int, var lastNeed: Int)
 
 class WriteAttach( byteBuffer: ByteBuffer, asynchronousSocketChannel: AsynchronousSocketChannel )
 

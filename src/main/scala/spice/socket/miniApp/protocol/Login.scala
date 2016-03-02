@@ -21,8 +21,6 @@ class Login(val account: String, val password: String) extends EnCoding {
   override val enCode = {
     ByteBuffer.wrap(uuidBA ++ accountBA ++ passwordBA)
   }
-
-
 }
 
 object Login extends DeCoding[Login] {

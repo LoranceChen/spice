@@ -13,17 +13,17 @@ trait EnCoding {
   protected val UUID: Long
 
   def overload: Long// length of the body, useful when
-  def enCode: ByteBuffer
+  def enCode: Array[Byte]
 }
 
 trait DeCoding[Refer <: EnCoding] {
-  def deCode(bf: ByteBuffer): Refer
+  def deCode(bf: Array[Byte]): Refer
 }
 
 object NonEnCoding extends EnCoding {
   val UUID = 0x10000100L
   def overload: Long = 0L
-  def enCode = session.NonByteBuffer
+  def enCode = session.EmptyArrayByte
 }
 
 object SearchProto {

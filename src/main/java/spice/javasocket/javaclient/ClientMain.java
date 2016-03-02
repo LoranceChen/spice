@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 public class ClientMain {
     public static void main(String[] args) throws Exception {
         AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
-        SocketAddress serverAddr = new InetSocketAddress("localhost", 8989);
+        SocketAddress serverAddr = new InetSocketAddress("localhost", 10001);
 
         Future<Void> result = channel.connect(serverAddr);
         result.get();
