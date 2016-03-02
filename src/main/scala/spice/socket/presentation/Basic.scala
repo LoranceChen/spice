@@ -1,35 +1,34 @@
-package spice.socket.protocal
+package spice.socket.presentation
 
 import java.nio.ByteBuffer
+import spice.socket.miniApp.protocol.Login
+import spice.socket.session
+import spice.socket.session.implicitpkg._
 
 /**
   * interface of network bytes exchange with T protocol
+  * TODO does it could be combine in single class?
   */
-trait BasicProtocol {
-  def enCode(dst: ByteBuffer): Unit
-  def deCode(src: ByteBuffer): BasicProtocol
+trait EnCoding {
+  protected val UUID: Long
+
+  def overload: Long// length of the body, useful when
+  def enCode: ByteBuffer
 }
 
-/*
- * example: define Login Protocol
- */
-class Login(account: String, password: String) extends BasicProtocol{
-  private val byteLength = {
+trait DeCoding[Refer <: EnCoding] {
+  def deCode(bf: ByteBuffer): Refer
+}
 
-    account.length + password.length + 2
-  }//
+object NonEnCoding extends EnCoding {
+  val UUID = 0x10000100L
+  def overload: Long = 0L
+  def enCode = session.NonByteBuffer
+}
 
-  def enCode(dst: ByteBuffer) = {
-    //make password to bytes with String protocol
-
-  }
-
-  def deCode(bf: ByteBuffer): Login = {
-    //verify does bf able to write all of capcity
-    val bfLeft = bf.capacity() - bf.limit()
-    if (byteLength <= bfLeft)
-    //get two string with length first
-    bf.get(1)
-    new Login("123", "admin")
+object SearchProto {
+  val protocol: Map[Long, Class[_ <: EnCoding]] = Map(1L -> classOf[Login])//todo register the map info with each EnCoding protocol
+  def byUUID(uuid: Long) = {
+    protocol.get(uuid)
   }
 }

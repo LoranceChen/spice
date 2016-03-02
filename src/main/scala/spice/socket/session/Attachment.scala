@@ -3,6 +3,8 @@ package spice.socket.session
 import java.nio.ByteBuffer
 import java.nio.channels.{AsynchronousServerSocketChannel, AsynchronousSocketChannel}
 
+import spice.socket.presentation.{DeCoding, EnCoding}
+
 /**
   * transfer those data into connected socket operator
   *
@@ -31,3 +33,19 @@ object BufferState extends Enumeration{
   val Spare = Value(3, "spare")
 
 }
+
+/**
+  * 1. used to save data from network and record protocol flag state
+  * 2. every socket map to one batch of this protocol
+  * 3. these class data access always in single thread(used at read call back once by once),so it doesn't matter use var
+  * @param byteBuffer
+  * @param readLeftProto last uncompleted protocol
+  * @param asynchronousSocketChannel
+  */
+class ReadAttach( val byteBuffer: ByteBuffer, val readLeftProto: ReadLeftProto, val asynchronousSocketChannel: AsynchronousSocketChannel )
+class ReadLeftProto(var uuid: Option[Long], var lastTo: Int, var lastNeed: Int)
+
+
+class WriteAttach( byteBuffer: ByteBuffer, asynchronousSocketChannel: AsynchronousSocketChannel )
+
+class ConnectionAttach

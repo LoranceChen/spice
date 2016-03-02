@@ -1,5 +1,7 @@
 package spice.socket
 
+import java.nio.ByteBuffer
+
 import spice.socket.session.implicitpkg._
 
 
@@ -14,7 +16,7 @@ import spice.socket.session.implicitpkg._
   *    A: No. protocol make our work straight and clean, but the Endian does not, it pay us attention to this meaningless thing. I shouldn't help them.
   */
 package object session {
-
+  val NonByteBuffer = ByteBuffer.allocate(0)
 }
 
 object UseCase extends App {

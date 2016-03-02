@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
-  *
+  * UUID use 0x1000,0100L ~ 0x1000,01ffL
   */
 package object protocol {
 

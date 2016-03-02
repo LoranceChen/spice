@@ -4,7 +4,7 @@ import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{AsynchronousServerSocketChannel, CompletionHandler, AsynchronousSocketChannel}
 
-import spice.socket.session.{BufferState, Entrance, Attachment}
+import spice.socket.session.{BufferState, Attachment}
 
 /**
   *

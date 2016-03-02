@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 import java.nio.channels.{CompletionHandler, AsynchronousSocketChannel}
 
 import spice.javasocket.SocketHelper
-import spice.socket.protocal.BasicProtocol
 
 /**
   *
@@ -48,10 +47,10 @@ class Attachment(
   var isRead: Boolean = false)
 
 object Transfer {
-  def write(context: BasicProtocol) = {
+//  def write(context: BasicProtocol) = {
 
 //    write(con)
-  }
+//  }
 }
 
 object WeChatTooTaskClient {
