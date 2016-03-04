@@ -6,15 +6,22 @@ import java.nio.channels.{AsynchronousSocketChannel, CompletionHandler, Asynchro
 import rx.lang.scala.{Subscriber, Observable}
 import spice.socket.presentation.{SearchProto, EnCoding}
 import spice.socket.session.exception.{ResultNegativeException, UUIDNotEnoughException}
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
-
+import spice.socket.session.Configration._
 /**
   * begin server socket listen
   * Q: concurrent in which stage?
   */
 class Entrance(host: String, port: Int) {
+  /**
+    * save temp readBuffer uncompleted data
+    */
+  val bufferHeap = mutable.Map[AsynchronousServerSocketChannel, Array[Byte]]()
+
   /**
     * listen connection and emit every connection event.
     */
@@ -30,7 +37,7 @@ class Entrance(host: String, port: Int) {
   def startReading(socketChannel: AsynchronousSocketChannel): Observable[ReadAttach] = {
     val readAttach = new ReadAttach(
       ByteBuffer.allocate(1024),
-      new ReadLeftProto(None, None, 0, 0),
+      new LeftProto(None, None, 0, 0, new TempBuffer(null, TEMPBUFFER_LIMIT)),
       socketChannel
     )
 
@@ -40,28 +47,31 @@ class Entrance(host: String, port: Int) {
       */
     def dispatchBuffer(rawAttach: ReadAttach) = {
       val buffer = rawAttach.byteBuffer
-      val leftProto = rawAttach.readLeftProto
+      val leftProto = rawAttach.leftProto
 //      buffer.flip()//position = 0, limit = length of the bytes
       //last proto does completed
       val lastCompleted = leftProto match {
-        case ReadLeftProto(None, _, _, _) =>
+        case LeftProto(None, _, _, _, tmpBuffer) =>
           //not left
           buffer.flip()
           val limit = buffer.limit()
           limit match {
-            case x if x < 8 =>
-              leftProto.protoId = Some(buffer.getLong)
-            case x if 8 <= x && x < 16 =>
-              leftProto.protoId = Some(buffer.getLong)
-              leftProto.length = Some(buffer.getLong)
-            case x if 16 <= x =>
+            case x if x < 4 =>
 //              leftProto.protoId = Some(buffer.getLong)
-              val length = buffer.getLong
+            case x if 4 <= x && x < 8 =>
+              leftProto.protoId = Some(buffer.getInt)
+              leftProto.length = None
+            case x if 4 <= x =>
+              //是否够处理?
+                //无论如何协议和长度都要读出来了.
+              val protoId = buffer.getInt
+              val length = buffer.getInt
 //              leftProto.length = Some(length)
               //缓冲区一次不够放
-              if (length > buffer.capacity() - 16) {//tag:1
-                //使用临时空间处理.
+              if (length > buffer.capacity() - 8) {//tag:1
+                //该协议使用临时空间处理.
                 //1. 为该次通信协议使用一个恰好的Array[Byte](length)//队列更好一些,因为只是存数据和读数据的操作
+                tmpBuffer.bf = ByteBuffer.allocate(length)
                 //2. 为该socket的通信协议分配一个队列
                 //3. 为所有链接的socket分配一个Map[socketChannel -> Queue[Byte]]统一存储和回收
                 //TODO
@@ -80,9 +90,9 @@ class Entrance(host: String, port: Int) {
 //          else
 //          leftProto.protoId = if (limit >= 8) Some(buffer.getLong) else None
 //          leftProto.
-        case ReadLeftProto(Some(id), None, _, _) =>
+        case LeftProto(Some(id), None, _, _, _) =>
           //only read uuid
-        case ReadLeftProto(Some(id), Some(length), _, _) =>
+        case LeftProto(Some(id), Some(length), _, _, _) =>
           //last time deal with a length but not read all of the load.
           //TODO need a ArrayBuffer save long data.Its also useful to define a custom buffer transfer big data.
           //as cost, we must manage the data, make it will be collection back

@@ -17,7 +17,7 @@ class Login(val account: String, val password: String) extends EnCoding {
   private val accountBA = StringToByteArray(account)
   private val passwordBA = StringToByteArray(password)
 
-  override val overload: Long = accountBA.length + passwordBA.length
+  override val overload: Int = accountBA.length + passwordBA.length
   override val enCode = {
     ByteBuffer.wrap(uuidBA ++ accountBA ++ passwordBA)
   }
@@ -38,7 +38,7 @@ object Login extends DeCoding[Login] {
 object UseCase extends App {
   val login = Login("admin", "12345")
   val loginEnCoded = login.enCode
-  val uuid = loginEnCoded.getLong()
+//  val uuid = loginEnCoded.getLong()
   val deCodeLogin = Login.deCode(loginEnCoded)
   Thread.currentThread().join()
 }

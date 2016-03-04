@@ -7,7 +7,7 @@ import spice.socket.session._
   */
 class MainApp {
   val entrance = Entrance("localhost", 10001)
-  val obsStart = entrance.start
+  val obsStart = entrance.startListen
 
   //two example of Connection event.
   var count = 0

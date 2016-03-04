@@ -10,25 +10,25 @@ import spice.socket.session.implicitpkg._
   * TODO does it could be combine in single class?
   */
 trait EnCoding {
-  protected val UUID: Long
+  protected val UUID: Int
 
-  def overload: Long// length of the body, useful when
-  def enCode: Array[Byte]
+  def overload: Int// length of the body, useful when
+  def enCode: ByteBuffer
 }
 
 trait DeCoding[Refer <: EnCoding] {
-  def deCode(bf: Array[Byte]): Refer
+  def deCode(bf: ByteBuffer): Refer
 }
 
 object NonEnCoding extends EnCoding {
-  val UUID = 0x10000100L
-  def overload: Long = 0L
-  def enCode = session.EmptyArrayByte
+  val UUID: Int = 0x1010
+  def overload: Int = 0
+  def enCode = session.EmptyByteBuffer
 }
 
 object SearchProto {
-  val protocol: Map[Long, Class[_ <: EnCoding]] = Map(1L -> classOf[Login])//todo register the map info with each EnCoding protocol
-  def byUUID(uuid: Long) = {
+  val protocol: Map[Int, Class[_ <: EnCoding]] = Map(1 -> classOf[Login])//todo register the map info with each EnCoding protocol
+  def byUUID(uuid: Int) = {
     protocol.get(uuid)
   }
 }

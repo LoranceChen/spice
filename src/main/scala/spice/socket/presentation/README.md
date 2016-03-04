@@ -16,7 +16,7 @@ datagram view as this:
 Server      ---------------------------------------------------------------------|---------------------------------- Client
 DataLayer  |<----- ^App  ----->|<---  ^pst ---->|<--- ^sen --->|<--..TCP/IP ..-->|      ....as Server
 
-Structure : ProtoID: Long byte + Length: Long 8 Byte + Contains: DeCoding[_ <: EnCoding] 8 * Length Byte
+Structure : ProtoID: Int byte + Length: Int 4 Byte + Contains: DeCoding[_ <: EnCoding] Length Byte
 
 #### 其他
 应用层数据的编码 - 应用程序层只需要标记需要解码的数据即可,长度信息在表示层附加.

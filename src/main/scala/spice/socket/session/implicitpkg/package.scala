@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
   */
 package object implicitpkg {
   implicit def toByteBufferEx(byteBuffer: ByteBuffer): ByteBufferEx = new ByteBufferEx(byteBuffer)
-  implicit def longToByteBuffer(bf: Long) = new LongEx(bf)
+  implicit def IntToByteBuffer(bf: Int) = new IntEx(bf)
   /**
     * use Upper word at beginning make it as a dependence function
     */

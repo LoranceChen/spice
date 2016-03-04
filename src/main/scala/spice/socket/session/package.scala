@@ -17,6 +17,7 @@ import spice.socket.session.implicitpkg._
   */
 package object session {
   val EmptyArrayByte = new Array[Byte](0)
+  val EmptyByteBuffer = ByteBuffer.allocate(0)
 }
 
 object UseCase extends App {

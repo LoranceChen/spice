@@ -5,7 +5,7 @@ package spice.socket.session.exception
   */
 class SessionException(msg: String) extends Throwable(msg)
 
-class ReadByteBufferException(msg: String,val uuid: Long) extends SessionException(msg)
+class ReadByteBufferException(msg: String,val uuid: Int) extends SessionException(msg)
 
-class UUIDNotEnoughException(msg: String = "ByteBuffer NOT contains UUID Length(8Byte) yet") extends ReadByteBufferException(msg, 0x10000001L)
-class ResultNegativeException(msg: String = "CompletedHandler return -1") extends ReadByteBufferException(msg, 0x10000002L)
+class UUIDNotEnoughException(msg: String = "ByteBuffer NOT contains UUID Length(8Byte) yet") extends ReadByteBufferException(msg, 0x1001)
+class ResultNegativeException(msg: String = "CompletedHandler return -1") extends ReadByteBufferException(msg, 0x1002)

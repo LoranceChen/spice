@@ -20,5 +20,5 @@ class Dispatch {
 }
 
 class ReadDispatch extends Dispatch{
-  def stream()
+  def stream() ={}
 }

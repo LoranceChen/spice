@@ -19,7 +19,6 @@ case class Attachment (
   var client: AsynchronousSocketChannel,
   var buffer: ByteBuffer,
   var status: BufferState.Value = BufferState.Spare) {
-
   /**
     * default constructor used at beginning as a reference wait fill info.
     */
@@ -38,12 +37,15 @@ object BufferState extends Enumeration{
   * 1. used to save data from network and record protocol flag state
   * 2. every socket map to one batch of this protocol
   * 3. these class data access always in single thread(used at read call back once by once),so it doesn't matter use var
+  * =====================
+  * effects: 1. byteBuffer 2.tmpBuffer 3.maxLimit
   * @param byteBuffer
-  * @param readLeftProto last uncompleted protocol
+  * @param leftProto last uncompleted protocol
   * @param asynchronousSocketChannel
   */
-class ReadAttach( val byteBuffer: ByteBuffer, val readLeftProto: ReadLeftProto, val asynchronousSocketChannel: AsynchronousSocketChannel )
-case class ReadLeftProto(var protoId: Option[Long], var length: Option[Long], var lastTo: Int, var lastNeed: Int)
+class ReadAttach( val byteBuffer: ByteBuffer, val leftProto: LeftProto, val asynchronousSocketChannel: AsynchronousSocketChannel)
+case class LeftProto(var protoId: Option[Int], var length: Option[Int], var lastTo: Int, var lastNeed: Int, val tmpBuffer: TempBuffer)
+class TempBuffer(var bf: ByteBuffer, var maxLimit: Int)//limit最大允许缓存的消息长度
 
 class WriteAttach( byteBuffer: ByteBuffer, asynchronousSocketChannel: AsynchronousSocketChannel )
 
