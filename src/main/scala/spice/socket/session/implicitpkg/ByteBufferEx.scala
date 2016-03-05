@@ -13,6 +13,13 @@ class ByteBufferEx(byteBuffer: ByteBuffer) {
     byteBuffer.get(stringBytes)
     new String(stringBytes, StandardCharsets.UTF_8)
   }
+
+   /**
+     * 未读部分的长度
+     */
+  def unReadLength = {
+     byteBuffer.limit() - byteBuffer.position()
+   }
 }
 
 object ByteBufferEx {
@@ -35,4 +42,5 @@ object ByteBufferEx {
     bytesLength(3) = (lengthData & 0xFF).toByte
     bytesLength ++ bytes
   }
+//  def copy
 }

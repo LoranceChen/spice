@@ -1,5 +1,10 @@
 ###UUID
-1. network data be recoginzed by UUID
-2. distinguish usage layer by specify UUID
-  such as, session use 0x1000000L ~ 0x1000,00ffL to represent it used.(at `spice.socket.session.exception`)
-3. todo manage UUID rather then define everywhere
+//1. network data be recoginzed by UUID
+//2. distinguish usage layer by specify UUID
+//  such as, session use 0x1000000L ~ 0x1000,00ffL to represent it used.(at `spice.socket.session.exception`)
+//3. todo manage UUID rather then define everywhere
+
+###Exp:
+1. NEVER use null, use default class replace.
+:: If I set variable as a Class , means I want this type to solve my problem, why I use null?
+it just a legacy at period c/c++, java shouldn't be and scala never use even more.

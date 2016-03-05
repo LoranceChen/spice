@@ -1,10 +1,13 @@
 package spice.socket.session.implicitpkg
 
+import java.nio.ByteBuffer
+
 /**
   *
   */
-//implicit class ArrayByteEx(ab: Array[Byte]) {
-//  def toString = {
-//    ab
+class ArrayByteEx(ab: Array[Byte]) {
+//  def put(bf: ByteBuffer, begin: Int, end: Int) = {
+//    for(i <- begin to end)
+//      bf.get(i)
 //  }
-//}
+}

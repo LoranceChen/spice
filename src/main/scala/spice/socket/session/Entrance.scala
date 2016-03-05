@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.{AsynchronousSocketChannel, CompletionHandler, AsynchronousServerSocketChannel}
 import rx.lang.scala.{Subscriber, Observable}
 import spice.socket.presentation.{SearchProto, EnCoding}
-import spice.socket.session.exception.{ResultNegativeException, UUIDNotEnoughException}
+import spice.socket.session.exception.{TmpBufferOverLoadException, ResultNegativeException}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Future, Promise}
@@ -37,7 +37,7 @@ class Entrance(host: String, port: Int) {
   def startReading(socketChannel: AsynchronousSocketChannel): Observable[ReadAttach] = {
     val readAttach = new ReadAttach(
       ByteBuffer.allocate(1024),
-      new LeftProto(None, None, 0, 0, new TempBuffer(null, TEMPBUFFER_LIMIT)),
+      new LeftProto(None, None, 0, 0, new TempBuffer(EmptyByteBuffer, TEMPBUFFER_LIMIT)),
       socketChannel
     )
 
@@ -45,7 +45,7 @@ class Entrance(host: String, port: Int) {
       * @param rawAttach should be raw form callback
       * TODO make the buffer as directAllocation because the operation is simple
       */
-    def dispatchBuffer(rawAttach: ReadAttach) = {
+    def dispatchBuffer(rawAttach: ReadAttach): Unit = {
       val buffer = rawAttach.byteBuffer
       val leftProto = rawAttach.leftProto
 //      buffer.flip()//position = 0, limit = length of the bytes
@@ -61,20 +61,16 @@ class Entrance(host: String, port: Int) {
             case x if 4 <= x && x < 8 =>
               leftProto.protoId = Some(buffer.getInt)
               leftProto.length = None
-            case x if 4 <= x =>
+            case x if 8 <= x =>
               //是否够处理?
                 //无论如何协议和长度都要读出来了.
               val protoId = buffer.getInt
               val length = buffer.getInt
 //              leftProto.length = Some(length)
-              //缓冲区一次不够放
-              if (length > buffer.capacity() - 8) {//tag:1
-                //该协议使用临时空间处理.
-                //1. 为该次通信协议使用一个恰好的Array[Byte](length)//队列更好一些,因为只是存数据和读数据的操作
-                tmpBuffer.bf = ByteBuffer.allocate(length)
-                //2. 为该socket的通信协议分配一个队列
-                //3. 为所有链接的socket分配一个Map[socketChannel -> Queue[Byte]]统一存储和回收
+              //当前缓冲区不够用或传输过来的协议不完整.这里不能用capacity判断,因为可能不完全填满.
+              if (length > buffer.limit() - 8) {//tag:1
                 //TODO
+                tmpBuffer.put(buffer)
               }
               else //缓存区够放
                 if (limit - buffer.position >= length){//需要的数据已经完全在缓冲区内了.
@@ -84,19 +80,18 @@ class Entrance(host: String, port: Int) {
               } else {//需要的数据未完全到达
                 //标记并进行下次读写
               }
-
           }
-//          if (limit < 8)
-//          else
-//          leftProto.protoId = if (limit >= 8) Some(buffer.getLong) else None
-//          leftProto.
         case LeftProto(Some(id), None, _, _, _) =>
           //only read uuid
         case LeftProto(Some(id), Some(length), _, _, _) =>
           //last time deal with a length but not read all of the load.
           //TODO need a ArrayBuffer save long data.Its also useful to define a custom buffer transfer big data.
           //as cost, we must manage the data, make it will be collection back
-
+          //1.这次能拼接完成之前的协议
+          //1.1存入缓存
+          //1.2 并触发这个协议(这个协议应该交给ReadAttach完成?)
+          //2.依然需要缓存
+          //同tag:1
       }
     }
 

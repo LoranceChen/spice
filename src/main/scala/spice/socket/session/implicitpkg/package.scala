@@ -7,8 +7,10 @@ import java.nio.ByteBuffer
   * All of them use Big-Endian for unification
   */
 package object implicitpkg {
-  implicit def toByteBufferEx(byteBuffer: ByteBuffer): ByteBufferEx = new ByteBufferEx(byteBuffer)
-  implicit def IntToByteBuffer(bf: Int) = new IntEx(bf)
+  //expend class
+  implicit def exByteBuffer(byteBuffer: ByteBuffer): ByteBufferEx = new ByteBufferEx(byteBuffer)
+  implicit def exInt(bf: Int): IntEx = new IntEx(bf)
+  implicit def exArrayBuffer(arrayByte: Array[Byte]): ArrayByteEx = new ArrayByteEx(arrayByte)
   /**
     * use Upper word at beginning make it as a dependence function
     */
