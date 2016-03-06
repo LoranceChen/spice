@@ -47,7 +47,13 @@ object BufferState extends Enumeration{
   */
 class ReadAttach( val byteBuffer: ByteBuffer, val leftProto: LeftProto, val asynchronousSocketChannel: AsynchronousSocketChannel)
 case class LeftProto(var protoId: Option[Int], var length: Option[Int], var lastTo: Int, var lastNeed: Int, val tmpBuffer: TempBuffer)
-class TempBuffer(tmpBf: ByteBuffer, maxLimit: Int) {//limit最大允许缓存的消息长度
+
+/**
+  *
+  * @param contextBf 存数协议的内容
+  * @param maxLimit
+  */
+class TempBuffer(contextBf: ByteBuffer, maxLimit: Int) {//limit最大允许缓存的消息长度
 //  var
 //  def put(src: ByteBuffer, begin: Int, end: Int) = {
   /**
@@ -56,7 +62,7 @@ class TempBuffer(tmpBf: ByteBuffer, maxLimit: Int) {//limit最大允许缓存的
     */
   def put(src: ByteBuffer) = {
     test(src)
-    ready(src)
+//    ready(src)
   }
 
   /**
@@ -74,7 +80,7 @@ class TempBuffer(tmpBf: ByteBuffer, maxLimit: Int) {//limit最大允许缓存的
     */
   private def ready(need: Int): Unit = {
     //之前的缓存够用
-    if (need < tmpBf.capacity()) {
+    if (need < contextBf.capacity()) {
 //      tmp
     }
 //    ready()

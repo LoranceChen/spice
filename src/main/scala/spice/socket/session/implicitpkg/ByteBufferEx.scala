@@ -1,25 +1,44 @@
 package spice.socket.session.implicitpkg
 
-import java.nio.ByteBuffer
+import java.nio.{BufferUnderflowException, ByteBuffer}
 import java.nio.charset.StandardCharsets
 
- /**
+import spice.socket.session.exception.ReadByteBufferException
+
+/**
   * extends ByteBuffer for get string by Length-Data protocol
   */
 class ByteBufferEx(byteBuffer: ByteBuffer) {
-  def getString = {
+  @deprecated("json socket project not use prefix length flag")
+  def getStringWithPrefixLength = {
     val length = byteBuffer.getInt()
-    val stringBytes = new Array[Byte](length)
-    byteBuffer.get(stringBytes)
-    new String(stringBytes, StandardCharsets.UTF_8)
+    getString(length)
+  }
+
+  def allToString = {
+    getString(byteBuffer.remaining())
   }
 
    /**
-     * 未读部分的长度
+     *
+     * @param length
+     * @return
+     *
      */
+  def getString(length: Int) = {
+    val stringBytes = new Array[Byte](length)
+    byteBuffer.get(stringBytes, byteBuffer.position, byteBuffer.position() + length)
+    new String(stringBytes, StandardCharsets.UTF_8)
+  }
+
+  /**
+   * 未读部分的长度
+    *
+   */
+  @deprecated("use remaining")
   def unReadLength = {
-     byteBuffer.limit() - byteBuffer.position()
-   }
+    byteBuffer.limit() - byteBuffer.position()
+  }
 }
 
 object ByteBufferEx {

@@ -31,7 +31,7 @@ object Login extends DeCoding[Login] {
     * needn't decode UUID because if user know it was a Login, he must be deCoded the UUID as 1
     */
   override def deCode(bf: ByteBuffer): Login = {
-    new Login(bf.getString, bf.getString)
+    new Login(bf.getStringWithPrefixLength, bf.getStringWithPrefixLength)
   }
 }
 

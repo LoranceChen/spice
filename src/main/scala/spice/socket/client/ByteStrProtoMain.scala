@@ -9,14 +9,17 @@ import spice.javasocket.SocketHelper
 /**
   *
   */
-object ClientMain extends App {
+object ByteStrProtoMain extends App {
   val channel: AsynchronousSocketChannel = AsynchronousSocketChannel.open
-  val serverAddr: SocketAddress = new InetSocketAddress("localhost", 10002)
+  val serverAddr: SocketAddress = new InetSocketAddress("localhost", 10001)
   def getCompletionHandler = new CompletionHandler[Void, Int] {
     override def completed(result: Void, attachment: Int): Unit = {
+      val proto = new Array[Byte](2)
+      proto(0) = 1.toByte
+      proto(1) = 2.toByte
       val bs = "hello server!".getBytes
       println(s"bs - ${bs.length}")
-      val attach = new Attachment(channel, ByteBuffer.wrap(bs), null, false)
+      val attach = new Attachment(channel, ByteBuffer.wrap(proto ++ bs), null, false)
       channel.write(attach.buffer, attach, new CompletionHandler[Integer, Attachment]{
         override def completed(result: Integer, attachment: Attachment): Unit = {
           println(s"attachment - $attachment")
@@ -39,21 +42,4 @@ object ClientMain extends App {
   SocketHelper.log("channel: AsynchronousSocketChannel - RemoteAddress - " + channel.getRemoteAddress)
 
   Thread.currentThread.join
-}
-
-class Attachment(
-  var channel: AsynchronousSocketChannel,
-  var buffer: ByteBuffer,
-  var mainThread: Thread,
-  var isRead: Boolean = false)
-
-object Transfer {
-//  def write(context: BasicProtocol) = {
-
-//    write(con)
-//  }
-}
-
-object WeChatTooTaskClient {
-//  val channel: AsynchronousSocketChannel =
 }

@@ -7,21 +7,17 @@ import rx.lang.scala.{Subscriber, Observable}
 import spice.socket.presentation.{SearchProto, EnCoding}
 import spice.socket.session.exception.{TmpBufferOverLoadException, ResultNegativeException}
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 import spice.socket.session.Configration._
+
 /**
+  * this class create a listen, listen to server, read loop, write operation, disconnect
   * begin server socket listen
   * Q: concurrent in which stage?
   */
 class Entrance(host: String, port: Int) {
-  /**
-    * save temp readBuffer uncompleted data
-    */
-  val bufferHeap = mutable.Map[AsynchronousServerSocketChannel, Array[Byte]]()
-
   /**
     * listen connection and emit every connection event.
     */
@@ -34,29 +30,60 @@ class Entrance(host: String, port: Int) {
     socketObservable(server)
   }
 
-  def startReading(socketChannel: AsynchronousSocketChannel): Observable[ReadAttach] = {
+  def startReading(socketChannel: AsynchronousSocketChannel): Observable[Vector[CompletedProto]] = {
     val readAttach = new ReadAttach(
       ByteBuffer.allocate(1024),
       new LeftProto(None, None, 0, 0, new TempBuffer(EmptyByteBuffer, TEMPBUFFER_LIMIT)),
       socketChannel
     )
 
+    val readerDispatch = new ReaderDispatch()
+
     /**
       * @param rawAttach should be raw form callback
-      * TODO make the buffer as directAllocation because the operation is simple
+      * @return completed protocol todo type choice: Array[Byte] or ByteBuffer
+      * //TODO make the buffer as directAllocation because the operation is simple. simple not!
+      * NOTE: returned data use new operation to allocate memory to represent the unique data stream was begin.
       */
-    def dispatchBuffer(rawAttach: ReadAttach): Unit = {
+    /**def dispatchBuffer(rawAttach: ReadAttach,completedProto: List[ProtoDatagram]): List[ProtoDatagram] = {
       val buffer = rawAttach.byteBuffer
       val leftProto = rawAttach.leftProto
 //      buffer.flip()//position = 0, limit = length of the bytes
       //last proto does completed
       val lastCompleted = leftProto match {
+        //it's beginning,let's make example,
+        //只包含最多一个协议 :: 内容 one protocol with 500 bytes, UUID = 0x0001, length = 500 - 4 - 4 = 492
+        //eg1. step1.1(第一个例子的第一个步骤): get 500 bytes :: position = 500, limit = capacity = 1024, mark = -1
+        //eg2. step2.1-1(第二个例子的第一个步骤的第一次读): get 3 bytes :: position = 3, limit = capacity = 1024, mark = -1
+        //eg2. step2.1-2(第二个例子的第一个步骤的第二次读): get 497
+        //eg3. step3.1...: get 7 bytes :: position = 7, limit = capacity = 1024, mark = -1
+        //eg4. step3.1...: get 200 bytes :: position = 200, limit = capacity = 1024, mark = -1
+        //包含了两个协议 :: 测试多个协议的读取 :: 关键在于读完第一个协议是否能将buffer的状态置为最原始的状态,这样能保证一个递归/循环操作是有效的
+        //two protocol with 700 bytes,
+          // first :: full data 400 :: UUID = 0x0001, length = 500 - 4 - 4 = 492
+          // second :: full data 300 :: UUID = 0x0001, length = 300 - 4 - 4 = 292
+        //eg5. step5.1-1(第一次读) : get 200 bytes :: position = 200, limit = capacity = 1024, mark = -1
+        //     step5.1-2(第二次读) : get 500 bytes :: ???position = 7, limit = capacity = 1024, mark = -1
+        //eg6. step6.1-1(第一次读) : get 500 bytes :: position = 500, limit = capacity = 1024, mark = -1
+        //     step6.1-2(第一次读) : get 200 bytes :: ???position = 7, limit = capacity = 1024, mark = -1
         case LeftProto(None, _, _, _, tmpBuffer) =>
           //not left
+          //step1.1 : rw :: position = 0, limit = 500, capacity = 1024, mark = 500
+          //step2.1-1 : rw :: position = 0, limit = 3, capacity = 1024, mark = 3
+          //step2.1-2 : rw :: position = 3, limit = 3, capacity = 1024, mark = -1
+          //step3.1 : rw :: position = 0, limit = 7, capacity = 1024, mark = -1
+          buffer.mark()
+
+          //step2.1-2 : rw :: position = 0, limit = 3, capacity = 1024, mark = 3
           buffer.flip()
+          //step1.2 : r :: limit = 500
+          //step2.2-1 : r :: limit = 3
           val limit = buffer.limit()
           limit match {
             case x if x < 4 =>
+            //step2.3-1 : rw :: position = 3, limit = 3, capacity = 1024, mark = 3
+              //为了socket.read操作能够按照继续向ByteBuffer中存储
+            buffer.reset()
 //              leftProto.protoId = Some(buffer.getLong)
             case x if 4 <= x && x < 8 =>
               leftProto.protoId = Some(buffer.getInt)
@@ -64,50 +91,71 @@ class Entrance(host: String, port: Int) {
             case x if 8 <= x =>
               //是否够处理?
                 //无论如何协议和长度都要读出来了.
+              //step1.3 :rw :: position = 4, limit = 500, capacity = 1024, mark = 500
               val protoId = buffer.getInt
+              //step1.4 :rw :: position = 8, limit = 500, capacity = 1024, mark = 500 :: length = 492
               val length = buffer.getInt
 //              leftProto.length = Some(length)
               //当前缓冲区不够用或传输过来的协议不完整.这里不能用capacity判断,因为可能不完全填满.
-              if (length > buffer.limit() - 8) {//tag:1
+              //step1.5 :r :: limit = 500 :: 492 > 500 - 8 false
+              if (length > buffer.limit() - 8) {
                 //TODO
                 tmpBuffer.put(buffer)
               }
-              else //缓存区够放
-                if (limit - buffer.position >= length){//需要的数据已经完全在缓冲区内了.
-                  // p:16(当前索引为16,含有效数据),limit = eg.20(索引20不含有效数据), length = 4,这时候是刚好够得
-                  //触发该协议
+              else //可以获取这次完整的协议
+              //step1.6 :r :: position = 8 :: 500 - 8 >= 492 true
+                if (limit - buffer.position >= length) {//需要的数据已经完全在缓冲区内了.
+                  //step1.7 存入List : rw :: position = 500, limit = 500, capacity = 1024, mark = 500
+                  val theProto = ProtoDatagram(protoId, length, buffer.getString(length))
+                  //step1.8 还原位置: rw :: position = 0, limit = capacity = 1024, mark = -1 completed
+                  buffer.clear()
 
-              } else {//需要的数据未完全到达
+                  theProto :: completedProto
+
+                  // p:16(当前索引为16,含有效数据),limit = eg.20(索引20不含有效数据), length = 4,这时候是刚好够的
+                  //触发该协议
+                  //read
+              } else {//需要的数据未完全到达???是否可以归为第5步,:: 参照eg.4 + eg.1
                 //标记并进行下次读写
               }
           }
         case LeftProto(Some(id), None, _, _, _) =>
           //only read uuid
-        case LeftProto(Some(id), Some(length), _, _, _) =>
+          //eg. position:500, limit= capacity = 1024, mark = ?0(doesn't matter)
+          buffer.mark()//make current position. :: rw :: position:500, limit= capacity = 1024, mark = 500(doesn't matter)
+          buffer.flip()//make limit to current position,::rw :: position:0, limit = 500, mark = 500
+          val limit = buffer.limit()// :: r :: 500
+          if (limit < 4) {//attempt get length data but not enough
+            //reset all data as change before, mark value is doesn't matter
+            buffer.reset()// :: rw :: position:500, limit = 500, mark = 500(let it done)
+//            buffer.
+//            buffer.put()
+          } else {
+
+          }
+        case LeftProto(Some(id), Some(length), _, _, tmpBuffer) =>
           //last time deal with a length but not read all of the load.
           //TODO need a ArrayBuffer save long data.Its also useful to define a custom buffer transfer big data.
           //as cost, we must manage the data, make it will be collection back
           //1.这次能拼接完成之前的协议
           //1.1存入缓存
+          tmpBuffer.put(buffer)
           //1.2 并触发这个协议(这个协议应该交给ReadAttach完成?)
+          return "ok"//返回一个onNext
           //2.依然需要缓存
           //同tag:1
+          tmpBuffer.put(buffer)
       }
-    }
+    }*/
 
-    /**
-      * used when success read uuid and length but just part of protocol overload
-      */
-    def tempSpace = {
-
-    }
-    Observable.apply[ReadAttach]({ s =>
+    Observable.apply[Vector[CompletedProto]]({ s =>
       def readForever: Unit = read(socketChannel, readAttach) onComplete {
         case Failure(f) =>
           println(s"read exception - $f")
           s.onError(f)
         case Success(c) =>
-          s.onNext(c)
+          val src = c.byteBuffer
+          readerDispatch.receive(src).foreach(s.onNext)
           readForever
       }
       readForever

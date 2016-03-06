@@ -25,5 +25,5 @@ object UseCase extends App {
   println(s"b - $b")
 
   import spice.socket.session._
-  println(s"s - ${b.getString}")
+  println(s"s - ${b.getStringWithPrefixLength}")
 }

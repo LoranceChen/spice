@@ -1,10 +1,45 @@
-###UUID
+###关于UUID的决定
 //1. network data be recoginzed by UUID
 //2. distinguish usage layer by specify UUID
 //  such as, session use 0x1000000L ~ 0x1000,00ffL to represent it used.(at `spice.socket.session.exception`)
 //3. todo manage UUID rather then define everywhere
-
-###Exp:
+以上内容已经废弃,当前目的只提供一个json的数据解析,也就是UUID现在的应用的目的只有一个,虽然不会废弃uuid(为了以后的扩展),但是已经不再重用uuid.
+=====================
+####基于一些先前的经验:
 1. NEVER use null, use default class replace.
 :: If I set variable as a Class , means I want this type to solve my problem, why I use null?
 it just a legacy at period c/c++, java shouldn't be and scala never use even more.
+
+####临时存储未完成协议的草案
+重点,难点:围绕着读buffer的状态
+实现的位置:dispatchBuffer方法
+一些原则:
+1.每次socket.read回调都会调用一次方法
+2.每次处理之后读buffer的limit等于capacity
+3.每次读操作过程中,如果协议号和长度,这两个数据不完全,则不改变buffer的任何状态
+4.当本次的读取操作只是读取未完成的协议时,需要保证读完协议之后
+
+[求助/问题/PS]
+我本想通过图形或者更为通俗的方式来描述这个问题,但是脑子现在一团糟,尤其是在动手写的时候更感觉不知所措.
+目前想法只局限在这些零散的点上,所以现在对这个问题的描述局限在了"存储未完成协议的实现需要做什么工作",而不是"存储未完成协议的实现该怎么做".
+现在的明确目的是————读取一个完整的协议.
+如果有更好的解决意见或者实现的表达方式,请联系我:lorance7016@163.com,或者提交一个push/comment
+
+解决以上问题的新的方案:
+我发现问题出现在:之所以复杂并不是因为ByteBuffer含有状态造成的,而是我的逻辑判断过多的依赖于读到的数据长度所造成————数据长度分成了读完/未读完协议号(前4Byte),
+读完协议号但未读完协议长度(4Byte),读到了协议号和协议长度,但未读完数据.这些状态维护(ByteBuffer类中的position,mark和limit)足够让人较劲脑汁.
+方案:socket.read方法自身ByteBuffer的状态控制权交给它的订阅者管理.
+
+####版本迭代规划
+v0.1-0.9
+  不做异常已处理
+  采用方便稳定的目的,而不是效率和节省空间
+  方法/类的设计不考虑通用性
+  按照通常的,直观的做法将模块细分
+  使用宽泛的类型
+  除非造成毁灭的问题,尽可能使用不变量
+
+
+指导原则:
+  如果需要过多的注释来理清思路,说明设计思路有问题
+  注意需要使用var的地方,通常这些var是我们刻意控制的(为了效率).来自外界的不可抗因素而必须使用var,如socket.read需要记住是否是完整协议这个状态
