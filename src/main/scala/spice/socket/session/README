@@ -1,5 +1,0 @@
-###UUID
-1. network data be recoginzed by UUID
-2. distinguish usage layer by specify UUID
-  such as, session use 0x1000000L ~ 0x1000,00ffL to represent it used.(at `spice.socket.session.exception`)
-3. todo manage UUID rather then define everywhere
