@@ -2,9 +2,13 @@ package spice.rx
 
 import java.util.concurrent.Executors
 
+import rx.lang.scala.subjects.{AsyncSubject, BehaviorSubject, ReplaySubject, PublishSubject}
 import rx.lang.scala.{Subscriber, Subject, Observable}
 import rx.schedulers.Schedulers
 import spice.concurrent.log
+
+import scala.collection.mutable
+
 /**
   * test all operation of ReactiveX
   * come from http://reactivex.io/documentation/operators.html
@@ -21,38 +25,37 @@ object OnNextAndEmit extends App {
 
 
 object PublishAndConnect extends App {
-  val obv = Observable[String]{s =>
+  val obv = Observable[Int]{s =>
+    val x = log("obv - ")
 //    def l: Unit = {
-      s.onNext("hi~")
+      s.onNext(1)
+      s.onNext(2)
 //      Thread.sleep(1000)
 //      l
 //    }
 //    l
-  }//.subscribeOn(NewThreadScheduler())
+  }//.publish//.subscribeOn(NewThreadScheduler())
 
   val obvMapped = obv.map{ o =>
-    println("map 01")
+    log("map 01")
     o + "2"
   }
 
+  var x = 1
+  val obvPublish = obv.map{s => log(s"obv - publish"); 2*s}//.publish
 
-  val obvPublish = obv.publish
+  obv.subscribe(s => log("obv - sub01" + s))
+  obv.subscribe(s => log("obv - sub02" + s))
+//  obvPublish.subscribe(s => log("sub01 - " + s))
+  obvPublish.subscribe(s => log("sub02 - " + s))
 //  obvPublish.connect
+//  obv.connect
 
-  obv.subscribe(s => println("obv - sub01" + s))
-  obvPublish.subscribe(s => println("sub01 - " + s))
-  obvPublish.subscribe(s => println("sub02 - " + s))
-
-  Thread.sleep(1000)
-  obvPublish.connect
-
-
-  val obvMappedPublish = obvMapped.publish
-
+  println("x - "+x)
   Thread.currentThread().join()
 }
 
-object LoppMeans extends App {
+object LoopMeans extends App {
   val obvTest = Observable[String] { s =>
     def loop  {
       s.onNext("hi~")
@@ -212,4 +215,24 @@ object SchedulersTest extends App {
 //  singleThread//4WithMultiThread
   multiThread
   Thread.currentThread().join()
+}
+
+object PublishSubjectTest extends App {
+  val pubSub = PublishSubject[String]()// try and enjoy BehaviorSubject ReplaySubject AsyncSubject
+  pubSub.onNext("1")
+  pubSub.onNext("2")
+  pubSub.subscribe(s => log("sub - " + s))
+  pubSub.onNext("3")
+  pubSub.onNext("4")
+  pubSub.onCompleted()
+  pubSub.subscribe(s => log("sub2 - " + s))
+
+}
+
+object ObservablePublish extends App {
+  val map = mutable.HashMap[Subscriber[String], String]()
+  val obvPublih = Observable[String]{s =>
+//    map.+=(s)
+    s
+  }
 }

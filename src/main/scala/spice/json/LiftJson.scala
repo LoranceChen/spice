@@ -49,3 +49,23 @@ object test extends App with LiftJson {
   val deser = valueDeserializer(ser)
   println(ser+ "\n" + deser)
 }
+
+object Remove extends App {
+  val jstr = """{
+        "sid": 9527,
+        "uid": null,
+        "user_receive_time": "2014-03-17 22:55:21",
+        "error_msg": "",
+        "mobile": "15205201314",
+        "report_status": "SUCCESS"
+    }"""
+
+  parseOpt(jstr).foreach { jValue =>
+    jValue match {
+      case jo: JObject =>
+        val x = jo.obj.removeField(_.name == "sid")
+        x
+      case _ => ???
+    }
+  }
+}
