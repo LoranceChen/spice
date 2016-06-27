@@ -11,5 +11,6 @@ libraryDependencies ++= Seq(
 
   "org.scala-lang" % "scala-reflect" % "2.11.7",
 
-  "net.liftweb" %% "lift-json" % "3.0-M8"
+  "net.liftweb" %% "lift-json" % "3.0-M8",
+   "org.scalaz" %% "scalaz-core" % "7.2.4"
 )
