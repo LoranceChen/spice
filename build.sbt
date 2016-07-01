@@ -12,5 +12,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.11.7",
 
   "net.liftweb" %% "lift-json" % "3.0-M8",
-   "org.scalaz" %% "scalaz-core" % "7.2.4"
+   "org.scalaz" %% "scalaz-core" % "7.2.4",
+  "org.mongodb.scala" %% "mongo-scala-driver" % "1.1.1"
 )
