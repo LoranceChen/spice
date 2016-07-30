@@ -4,7 +4,6 @@ import java.util.Comparator
 import java.util.concurrent._
 
 import scala.concurrent.Promise
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * todo remove the first task after it was ensure not nextTask
@@ -16,51 +15,56 @@ class TaskManager {
   import TaskCommandQueue._
   object TaskCommandQueue {
     trait Action
-    case class Remove(id: String) extends Action
-    case class RemoveByKey(key: TaskKey) extends Action
-    case class Update(key: TaskKey, newTask: Option[Task]) extends Action
     case class Cancel(id: String, promise: Promise[Option[Task]]) extends Action
     case class Get(id: String, promise: Promise[Option[Task]]) extends Action
-    case class GetByKey(taskKey: TaskKey, promise: Promise[Option[Task]]) extends Action
     case class AddTask(task: Task) extends Action
-    case class GetFirst(promise: Promise[Option[Task]]) extends Action
     case class GetCount(promise: Promise[Int]) extends Action
+    case class NextTask(lastTask: Task) extends Action
   }
 
   class TaskCommandQueue extends CommandQueue[TaskCommandQueue.Action]{
     import TaskCommandQueue._
-
+    private def addTaskSync(task: Task) = {
+      DataSet.put(task)
+      dispatch.ready(task)
+      timerTaskLogger.log("addTask - " + task, 150)
+    }
     protected override def receive(action: Action): Unit = action match {
-//      case Remove(id: String) => ???
-//      case RemoveByKey(key: TaskKey) => ???
-//      case Update(key: TaskKey, newTask: TaskKey) => ???
       case Cancel(id: String, promise: Promise[Option[Task]]) =>
-        timerTaskLogger.log(s"ready cancel task - $id")
-        val tryGetTask = List(dispatch.cancelCurrentTaskIf((waitingTask) => {
-          waitingTask.taskId.id == id
-        })._2,
+        timerTaskLogger.log(s"ready cancel task - $id", 150)
+        val tryGetTask = List(
+          dispatch.cancelCurrentTaskIf((waitingTask) => {
+            waitingTask.taskId.id == id
+          })._2,
           DataSet.remove(id)).flatten
 
         promise.trySuccess(tryGetTask.headOption)
       case AddTask(task: Task) =>
-        DataSet.put(task)
-        dispatch.ready(task)
-        timerTaskLogger.log("addTask - " + task)
-        //    if(result._1) result._2.foreach{tsk => DataSet.put(tsk)} // success - put replaced task to set
-        timerTaskLogger.log(s"tasks contains - ${DataSet.size}; add task - $task", 600)
+        addTaskSync(task)
       case Get(id: String, promise: Promise[Option[Task]]) =>
         promise.trySuccess(DataSet.get(id))
-      case GetByKey(key: TaskKey, promise: Promise[Option[Task]]) =>
-        promise.trySuccess(DataSet.get(key))
-      case Update(key, newTask: Option[Task]) =>
-        DataSet.update(key, newTask)
-      case GetFirst(promise: Promise[Option[Task]]) =>
-        promise.trySuccess(DataSet.getFirst)
       case GetCount(promise: Promise[Int]) =>
-        promise.trySuccess(DataSet.size)
-      case x =>
-        timerTaskLogger.log(s"unmatch - $x")
+        val x = DataSet.size
+        timerTaskLogger.log(s"GetCount - $x", 300)
+        promise.trySuccess(x)
+      case NextTask(lastTask) =>
+        DataSet.get(lastTask.taskId) match {
+          case None => //has removed, DON'T calculate nextTask even though the Task has next task
+            timerTaskLogger.log("has removed and needn't get `nextTask`- " + lastTask, 300)
+          case Some(_) =>
+            timerTaskLogger.log("get last task - " + lastTask, 300)
+            DataSet.update(lastTask.taskId, lastTask.nextTask)
+        }
+
+        //get next task, put it to task set
+        DataSet.getFirst.foreach { task =>
+          timerTaskLogger.log("ready task - " + task, 170, Some("manager"))
+          addTaskSync(task) //can't use `tell` because it will break `NextTask` actions
+        }
+
+        timerTaskLogger.log("DataSet count after `NextTask` - " + DataSet.size, 150)
     }
+
 
     private object DataSet {
       private val tasks = new ConcurrentSkipListMap[TaskKey, Task](new Comparator[TaskKey]() {
@@ -69,19 +73,12 @@ class TaskManager {
           //return 1 will cause dead lock, we should always promise compare result is great or little
           if (compare == 0) {
             val comp = o1.hashCode() - o2.hashCode()
-            //          assert(comp != 0) //can't be 0
             comp
           } else compare //distinct same time task
         }
       })
 
       private val auxiliaryMap = new ConcurrentHashMap[String, TaskKey]()
-
-      def pollFirst = {
-        val first = Option(tasks.pollFirstEntry())
-        first.foreach(y => auxiliaryMap.remove(y.getKey.id))
-        first
-      }
 
       def getFirst = {
         Option(tasks.firstEntry()).map(_.getValue)
@@ -137,48 +134,9 @@ class TaskManager {
   private val dispatch = new TaskHolder()
 
   //notice the observer execute at Dispatch Thread if `afterExecute` not use `observeOn`
-  dispatch.afterExecute.subscribe { (lastTask) => {
-    val promise = Promise[Option[Task]]()
-    dataSetOperateQueue.tell(GetByKey(lastTask.taskId, promise))
-    promise.future.map { getRst =>
-      getRst match {
-        case None => //has removed, DON'T calculate nextTask even though the Task has next task
-          timerTaskLogger.log("has removed and needn't get `nextTask`- " + lastTask)
-        case Some(_) =>
-          timerTaskLogger.log("get last task - " + lastTask)
-          dataSetOperateQueue.tell(Update(lastTask.taskId, lastTask.nextTask))
-      }
-      val getFirstPromise = Promise[Option[Task]]()
-      dataSetOperateQueue.tell(GetFirst(getFirstPromise))
-      getFirstPromise.future.foreach { tkpt =>
-        tkpt.foreach { tk =>
-          timerTaskLogger.log("ready task - " + tk, 170, Some("manager"))
-          dataSetOperateQueue.tell(AddTask(tk))
-        }
-      }
-    }
-
-    //    DataSet.get(lastTask.taskId) match {
-    //      case None => //has removed, DON'T calculate nextTask even though the Task has next task
-    //        timerTaskLogger.log("has removed and needn't get `nextTask`- " + lastTask)
-    //      case Some(_) =>
-    //        timerTaskLogger.log("get last task - " + lastTask)
-    //        DataSet.update(lastTask.taskId, lastTask.nextTask)
-    //      //        DataSet.lock.synchronized{
-    //      //          DataSet.remove(lastTask.taskId) //remove the completed task SHOULDN'T use `pullFirst`
-    //      //          lastTask.nextTask.foreach{task => DataSet.put(task)} //try add next task
-    //      }
-    //    }
-
-    ////calculate next item, put it to task set
-    ////    lastTask.nextTask.foreach{task => DataSet.put(task)}
-
-    //    DataSet.getFirst.foreach { task =>
-    //      timerTaskLogger.log("ready task - " + task, 170, Some("manager"))
-    //      addTask(task.getValue)
-    //    }
-    }
-  }
+  dispatch.afterExecute.subscribe ( (lastTask) =>
+    dataSetOperateQueue.tell(NextTask(lastTask))
+  )
 
   def tasksCount = {
     val promise = Promise[Int]()
